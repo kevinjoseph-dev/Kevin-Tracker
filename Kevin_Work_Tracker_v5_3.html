@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Kevin Joseph - Work Tracker 2026</title>
+<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f5f9;color:#0f172a;min-height:100vh}
+
+header{background:#0f172a;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:300}
+.logo{font-size:14px;font-weight:600;color:#f1f5f9}
+.logo em{color:#475569;font-style:normal;font-weight:400;font-size:12px;margin-left:8px}
+nav{display:flex;gap:2px;margin-left:18px}
+.nb{background:none;border:none;color:#64748b;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit}
+.nb:hover,.nb.on{background:#1e293b;color:#f1f5f9}
+.nb.on{font-weight:500}
+.hdr-r{display:flex;gap:8px;align-items:center}
+.pill{font-size:11px;background:#1e293b;padding:3px 10px;border-radius:20px}
+#save-ts{color:#4ade80}
+#entry-count{color:#64748b}
+
+.btn{display:inline-flex;align-items:center;gap:5px;padding:0 13px;height:32px;border-radius:7px;border:none;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap}
+.bp{background:#6366f1;color:#fff}.bp:hover{background:#5154d3}
+.bx{background:#1e293b;color:#94a3b8;border:1px solid #334155}.bx:hover{background:#334155;color:#f1f5f9}
+.bd{background:#fee2e2;color:#dc2626}.bd:hover{background:#fecaca}
+.be{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0}.be:hover{background:#e2e8f0}
+.sm{height:26px;padding:0 9px;font-size:11px}
+
+main{max-width:100%;padding:20px 24px}
+.view{display:none}.view.on{display:block}
+
+.top-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.msel{height:34px;border:1px solid #e2e8f0;border-radius:7px;padding:0 12px;font-size:13px;font-weight:600;background:#fff;color:#0f172a;font-family:inherit;outline:none;cursor:pointer}
+.msel:focus{border-color:#6366f1}
+.top-r{margin-left:auto;display:flex;gap:8px}
+.sf{height:32px;border:1px solid #e2e8f0;border-radius:7px;padding:0 9px;font-size:12px;background:#fff;color:#475569;font-family:inherit;outline:none;cursor:pointer}
+.sf:focus{border-color:#6366f1}
+
+/* Matrix */
+.matrix-wrap{overflow:auto;max-height:calc(100vh - 148px);border-radius:10px;border:1px solid #e2e8f0;background:#fff}
+.matrix{border-collapse:collapse;width:100%}
+.matrix thead tr th{background:#0f172a;padding:0;border-right:1px solid #1e293b;position:sticky;top:0;z-index:10}
+.matrix thead tr th:first-child{position:sticky;left:0;top:0;z-index:20;background:#0f172a}
+.th-inner{padding:10px 12px}
+.th-week{font-size:11px;font-weight:700;color:#f1f5f9;letter-spacing:.02em}
+.th-dates{font-size:10px;color:#475569;margin-top:2px}
+.th-proj-label{font-size:10px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:.07em}
+
+.matrix tbody tr{border-bottom:1px solid #e2e8f0}
+.matrix tbody tr:last-child{border-bottom:none}
+
+.proj-cell{position:sticky;left:0;z-index:5;background:#fff;border-right:2px solid #e2e8f0;padding:14px 16px;vertical-align:top;min-width:230px;width:230px}
+.proj-cell:hover{background:#fafbff}
+.proj-name{font-size:14px;font-weight:700;color:#0f172a;line-height:1.3;margin-bottom:7px}
+.proj-acct{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#6366f1;background:#eef2ff;border-radius:4px;padding:2px 7px;margin-bottom:5px}
+.proj-track{font-size:11px;color:#64748b;margin-bottom:7px;line-height:1.4}
+.proj-person{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.person-lbl{font-size:10px;color:#94a3b8;width:18px;flex-shrink:0}
+.person-name{font-size:11px;font-weight:600;color:#334155}
+.dsn-chip{display:inline-flex;align-items:center;gap:4px;background:#fdf4ff;color:#7e22ce;border:1px solid #e9d5ff;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:600}
+.proj-actions{display:flex;gap:4px;margin-top:9px;opacity:0;transition:.15s}
+.proj-cell.complete{background:#f8fafc}
+.proj-cell.complete .proj-name{color:#94a3b8;text-decoration:line-through}
+.proj-cell.complete .proj-acct{background:#f1f5f9;color:#94a3b8}
+.proj-cell.complete .proj-track{color:#c4c9d4}
+.complete-badge{display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600;margin-top:4px}
+.proj-cell:hover .proj-actions{opacity:1}
+
+.entry-cell{vertical-align:top;padding:7px;border-right:1px solid #f1f5f9;min-width:190px}
+.entry-cell:last-child{border-right:none}
+
+.ecell{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px 11px;cursor:pointer;min-height:80px;transition:border-color .15s,box-shadow .15s}
+.ecell:hover{border-color:#c7d2fe;box-shadow:0 2px 8px rgba(99,102,241,.08)}
+.ecell-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:7px}
+.ecell-desc{font-size:12px;color:#475569;line-height:1.6;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.ecell-links{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}
+
+.empty-cell{border:1.5px dashed #e2e8f0;border-radius:8px;min-height:80px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#cbd5e1;font-size:22px;transition:.15s}
+.empty-cell:hover{border-color:#6366f1;color:#6366f1;background:#eef2ff}
+
+.add-proj-row td{padding:12px 16px;background:#f8fafc;border-top:1px solid #e2e8f0}
+
+/* Status pill */
+.sp{display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600;border:none;cursor:pointer;font-family:inherit;white-space:nowrap}
+.sp:hover{filter:brightness(.96)}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;display:inline-block}
+.sm-wrap{position:relative;display:inline-block}
+.sm-drop{position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid #e2e8f0;border-radius:8px;min-width:150px;box-shadow:0 4px 20px rgba(0,0,0,.12);overflow:hidden;z-index:100;display:none}
+.sm-drop.open{display:block}
+.sm-drop button{display:flex;align-items:center;gap:8px;width:100%;background:#fff;border:none;padding:7px 12px;cursor:pointer;font-size:12px;font-family:inherit;color:#334155;text-align:left}
+.sm-drop button:hover{background:#f8fafc}
+.prio{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700}
+
+/* Link chips */
+.lchip{display:inline-flex;align-items:center;gap:3px;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:500;white-space:nowrap;border:1px solid;text-decoration:none}
+.lchip-url{background:#eef2ff;color:#4f46e5;border-color:#c7d2fe;position:relative;z-index:2;cursor:pointer}
+.lchip-url:hover{background:#e0e7ff;text-decoration:underline}
+.lchip-txt{background:#f1f5f9;color:#64748b;border-color:#e2e8f0;cursor:default}
+
+/* Dashboard */
+.kg{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px}
+.kc{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px}
+.kl{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px}
+.kv{font-size:28px;font-weight:700;line-height:1}
+.ks{font-size:11px;color:#94a3b8;margin-top:4px}
+.dc{background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:16px}
+.dh{padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:13px;font-weight:500;color:#475569}
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:700px){.dg{grid-template-columns:1fr}}
+.br{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.bb{flex:1;height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden}
+.bf{height:100%;border-radius:4px}
+.ht{border-collapse:separate;border-spacing:3px 4px}
+.hc{width:30px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+
+/* All entries */
+.tb{padding:10px 14px;border-bottom:1px solid #f1f5f9;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sw{position:relative;flex:1;min-width:180px}
+.sw input{width:100%;padding:0 10px 0 30px;height:32px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;outline:none;background:#f8fafc;font-family:inherit;color:#0f172a}
+.sw input:focus{border-color:#6366f1}
+.si{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px;pointer-events:none}
+table.list{width:100%;border-collapse:collapse}
+table.list th{padding:8px 12px;font-size:10px;font-weight:700;color:#94a3b8;text-align:left;background:#f8fafc;border-bottom:1px solid #e2e8f0;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+table.list td{padding:10px 12px;font-size:12px;color:#334155;vertical-align:top;border-bottom:1px solid #f8fafc;line-height:1.6}
+tr.dr:hover td{background:#fafbff}
+
+/* Side panel */
+.pov{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:250;display:none;justify-content:flex-end}
+.pov.open{display:flex}
+.pan{background:#fff;width:min(440px,100vw);height:100vh;overflow-y:auto;border-left:1px solid #e2e8f0;padding:22px;display:flex;flex-direction:column;gap:14px}
+.pan-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#94a3b8;margin-bottom:4px}
+.pan-val{font-size:13px;color:#334155;line-height:1.65;white-space:pre-wrap}
+.pan-g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* Backup panel */
+.bk-wrap{position:relative}
+.bk-drop{display:none;position:absolute;top:calc(100% + 8px);right:0;background:#1e293b;border:1px solid #334155;border-radius:10px;width:310px;z-index:500;box-shadow:0 8px 32px rgba(0,0,0,.4);overflow:hidden}
+.bk-drop.open{display:block}
+.bk-head{padding:11px 14px;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between}
+.bk-list{max-height:260px;overflow-y:auto}
+.bk-row{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid #1e293b;gap:8px}
+.bk-lbl{font-size:12px;color:#f1f5f9;font-weight:500}
+.bk-sub{font-size:10px;color:#475569;margin-top:2px}
+.bk-foot{padding:8px 14px;font-size:10px;color:#334155;border-top:1px solid #334155}
+
+/* Modals */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:300;display:none;align-items:center;justify-content:center}
+.ov.open{display:flex}
+.modal{background:#fff;border-radius:13px;width:min(600px,95vw);max-height:92vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.22)}
+.mh{padding:18px 20px 13px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}
+.mt{font-size:15px;font-weight:600}
+.mb{padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
+.mb .full{grid-column:1/-1}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fl{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em}
+.fi{height:34px;border:1px solid #e2e8f0;border-radius:7px;padding:0 10px;font-size:13px;outline:none;font-family:inherit;color:#0f172a;width:100%;background:#fff}
+.fi:focus{border-color:#6366f1;box-shadow:0 0 0 3px #e0e7ff}
+textarea.fi{height:auto;padding:8px 10px;resize:vertical;min-height:80px}
+.mf{padding:12px 20px 16px;display:flex;gap:8px;justify-content:flex-end;border-top:1px solid #f1f5f9;position:sticky;bottom:0;background:#fff}
+.modal-ctx{padding:10px 20px;font-size:12px;color:#64748b;background:#f8fafc;border-bottom:1px solid #f1f5f9}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;background:#0f172a;color:#f1f5f9;padding:9px 16px;border-radius:8px;font-size:13px;z-index:999;opacity:0;transform:translateY(6px);transition:.2s;pointer-events:none}
+.toast.show{opacity:1;transform:none}
+
+/* Print */
+@media print {
+  header,.top-bar,.proj-actions,.ecell .btn,.add-proj-row,
+  .bk-wrap,.pov,.ov,.toast{display:none !important}
+  body{background:#fff !important}
+  main{padding:0 !important}
+  .matrix-wrap{overflow:visible !important;max-height:none !important;border:none !important;border-radius:0 !important}
+  .matrix thead tr th{position:static !important;background:#1e293b !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .matrix .proj-cell{position:static !important}
+  .ecell{border:1px solid #e2e8f0 !important;box-shadow:none !important}
+  .empty-cell{border:1px dashed #e2e8f0 !important;min-height:30px !important}
+  .lchip-url::after{content:" (" attr(href) ")";font-size:9px;color:#666}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center">
+    <div class="logo">Kevin Joseph <em>Work Tracker 2026</em></div>
+    <nav>
+      <button class="nb on" onclick="showView('matrix')">Projects</button>
+      <button class="nb"    onclick="showView('dashboard')">Dashboard</button>
+      <button class="nb"    onclick="showView('all')">All Entries</button>
+    </nav>
+  </div>
+  <div class="hdr-r">
+    <span class="pill" id="entry-count">9 entries</span>
+    <span class="pill" id="save-ts">ready</span>
+    <div class="bk-wrap">
+      <button class="btn bx" onclick="toggleBk(event)">Backups</button>
+      <div class="bk-drop" id="bk-drop">
+        <div class="bk-head">
+          <span style="font-size:12px;font-weight:600;color:#f1f5f9">Auto-backup history</span>
+          <label class="btn bx sm" style="cursor:pointer">Import
+            <input type="file" accept=".json" style="display:none" onchange="importJSON(event)">
+          </label>
+        </div>
+        <div class="bk-list" id="bk-list"></div>
+        <div class="bk-foot">Saved automatically on every change &middot; last 10 kept</div>
+      </div>
+    </div>
+    <button class="btn bx" onclick="exportXLSX()">Excel</button>
+    <button class="btn bx" onclick="window.print()">PDF</button>
+    <button class="btn bp" onclick="openProjectModal(null)">+ Add project</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- MATRIX VIEW -->
+  <div class="view on" id="view-matrix">
+    <div class="top-bar">
+      <select class="msel" id="board-month" onchange="renderMatrix()"></select>
+      <span style="font-size:12px;color:#94a3b8" id="matrix-summary"></span>
+      <button id="completed-toggle" class="btn be" onclick="toggleCompleted()" style="font-size:12px">Show completed</button>
+      <div class="top-r">
+        <select class="sf" id="f-acct" onchange="renderMatrix()"></select>
+        <select class="sf" id="f-stat" onchange="renderMatrix()"></select>
+      </div>
+    </div>
+    <div class="matrix-wrap">
+      <table class="matrix" id="matrix-table"></table>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="view" id="view-dashboard">
+    <div class="kg" id="kgrid"></div>
+    <div class="dg">
+      <div class="dc"><div class="dh">Status breakdown</div><div style="padding:14px 16px" id="sbars"></div></div>
+      <div class="dc"><div class="dh">Weekly activity heatmap</div><div style="padding:14px 16px;overflow-x:auto" id="heatmap"></div></div>
+    </div>
+    <div class="dc"><div class="dh">Projects</div><div style="overflow-x:auto"><table class="list" id="proj-table"></table></div></div>
+  </div>
+
+  <!-- ALL ENTRIES -->
+  <div class="view" id="view-all">
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">
+      <div class="tb">
+        <div class="sw"><span class="si">&#9906;</span>
+          <input id="srch" placeholder="Search project, description, PM..." oninput="renderAll()">
+        </div>
+        <select class="sf" id="fa-month" onchange="renderAll()"></select>
+        <select class="sf" id="fa-acct"  onchange="renderAll()"></select>
+        <select class="sf" id="fa-stat"  onchange="renderAll()"></select>
+      </div>
+      <div style="overflow-x:auto"><table class="list" id="all-table"></table></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Side panel -->
+<div class="pov" id="pov" onclick="if(event.target===this)closePan()">
+  <div class="pan" id="pan-body"></div>
+</div>
+
+<!-- Entry modal -->
+<div class="ov" id="entry-ov" onclick="if(event.target===this)closeEntryModal()">
+  <div class="modal">
+    <div class="mh">
+      <span class="mt" id="entry-modal-title">Add work</span>
+      <button class="btn be sm" onclick="closeEntryModal()">&#x2715;</button>
+    </div>
+    <div id="entry-modal-ctx" class="modal-ctx"></div>
+    <form onsubmit="saveEntry(event)">
+      <div class="mb">
+        <div class="fg"><label class="fl">Priority</label>
+          <select class="fi" id="e-priority">
+            <option>Critical</option><option>High</option><option selected>Medium</option><option>Low</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Status</label>
+          <select class="fi" id="e-status">
+            <option>Not Started</option><option>In Progress</option><option selected>On Track</option>
+            <option>In Review</option><option>At Risk</option><option>Blocked</option><option>Done</option>
+          </select>
+        </div>
+        <div class="fg full"><label class="fl">Description &amp; Updates</label>
+          <textarea class="fi" id="e-desc" rows="5" placeholder="What happened this week on this project?"></textarea>
+        </div>
+        <div class="fg full"><label class="fl">Links &amp; Notes</label>
+          <input class="fi" id="e-links" placeholder="Paste URLs or type notes, one per line for multiple">
+        </div>
+      </div>
+      <div class="mf">
+        <button type="button" class="btn be" onclick="closeEntryModal()">Cancel</button>
+        <button type="submit" class="btn bp">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Project modal -->
+<div class="ov" id="proj-ov" onclick="if(event.target===this)closeProjModal()">
+  <div class="modal">
+    <div class="mh">
+      <span class="mt" id="proj-modal-title">New project</span>
+      <button class="btn be sm" onclick="closeProjModal()">&#x2715;</button>
+    </div>
+    <form onsubmit="saveProject(event)">
+      <div class="mb">
+        <div class="fg full"><label class="fl">Project name</label>
+          <input class="fi" id="p-name" required placeholder="e.g. RBAC L4, Bank Feeds...">
+        </div>
+        <div class="fg"><label class="fl">Account</label>
+          <select class="fi" id="p-account">
+            <option>DT</option><option>IES</option><option>GTM</option><option>Platform</option><option>Other</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Track</label>
+          <input class="fi" id="p-track" placeholder="DTM, RBAC, Commercialization...">
+        </div>
+        <div class="fg"><label class="fl">PM</label><input class="fi" id="p-pm"></div>
+        <div class="fg"><label class="fl">Designer</label><input class="fi" id="p-designer" value="Kevin"></div>
+        <div class="fg"><label class="fl">Designation</label><input class="fi" id="p-designation" value="UX Designer"></div>
+        <div class="fg"><label class="fl">Project Status</label>
+          <select class="fi" id="p-status"><option value="Active">Active</option><option value="Complete">Complete</option></select>
+        </div>
+      </div>
+      <div class="mf">
+        <button type="button" id="p-del-btn" class="btn bd" style="margin-right:auto;display:none"
+          onclick="deleteProjFromModal()">Delete project</button>
+        <button type="button" class="btn be" onclick="closeProjModal()">Cancel</button>
+        <button type="submit" class="btn bp">Save project</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add week modal -->
+<div class="ov" id="week-ov" onclick="if(event.target===this)closeWeekModal()">
+  <div class="modal" style="width:min(440px,95vw)">
+    <div class="mh">
+      <span class="mt">Add week</span>
+      <button class="btn be sm" onclick="closeWeekModal()">&#x2715;</button>
+    </div>
+    <form onsubmit="saveWeek(event)">
+      <div class="mb" style="grid-template-columns:1fr">
+        <div class="fg">
+          <label class="fl">Month</label>
+          <input class="fi" id="wk-month" readonly style="background:#f8fafc;color:#64748b">
+        </div>
+        <div class="fg">
+          <label class="fl">Week label</label>
+          <input class="fi" id="wk-label" required placeholder="e.g.  W4  Mar 23-27" style="font-family:monospace">
+        </div>
+        <p style="font-size:11px;color:#94a3b8;margin-top:-4px">
+          Format: <code>W4  Mar 23-27</code> (two spaces between week number and dates)
+        </p>
+      </div>
+      <div style="padding:0 20px 16px;display:flex;flex-direction:column;gap:6px">
+        <p style="font-size:12px;font-weight:600;color:#475569">Quick add:</p>
+        <div style="display:flex;flex-wrap:wrap;gap:6px" id="week-suggestions"></div>
+      </div>
+      <div class="mf">
+        <button type="button" class="btn be" onclick="closeWeekModal()">Cancel</button>
+        <button type="submit" class="btn bp">Add week</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var MONTHS = [
+  "January 2026","February 2026","March 2026","April 2026",
+  "May 2026","June 2026","July 2026","August 2026",
+  "September 2026","October 2026","November 2026","December 2026"
+];
+
+var SC = {
+  "On Track":    {bg:"#dcfce7",fg:"#15803d",dot:"#22c55e"},
+  "In Progress": {bg:"#dbeafe",fg:"#1d4ed8",dot:"#3b82f6"},
+  "In Review":   {bg:"#ede9fe",fg:"#7c3aed",dot:"#8b5cf6"},
+  "At Risk":     {bg:"#fef3c7",fg:"#b45309",dot:"#f59e0b"},
+  "Blocked":     {bg:"#fee2e2",fg:"#dc2626",dot:"#ef4444"},
+  "Done":        {bg:"#d1fae5",fg:"#065f46",dot:"#10b981"},
+  "Not Started": {bg:"#f1f5f9",fg:"#475569",dot:"#94a3b8"}
+};
+var STATS = ["On Track","In Progress","In Review","At Risk","Blocked","Done","Not Started"];
+var PC = {Critical:"#ef4444",High:"#f97316",Medium:"#eab308",Low:"#94a3b8"};
+
+// --- PROJECTS ---
+var PROJECTS = [
+  {id:1,name:"Post Upgrade Migration Tasks",account:"DT", track:"DTM",status:"Active",                     pm:"Venkat",         designer:"Kevin",designation:"UX Designer"},
+  {id:2,name:"Commercialization - Sandbox", account:"IES",track:"Commercialization",status:"Active",        pm:"Lawton Ursrey",  designer:"Kevin",designation:"UX Designer"},
+  {id:3,name:"RBAC L4",                     account:"IES",track:"RBAC",status:"Active",                    pm:"Varshita / Ajay",designer:"Kevin",designation:"UX Designer"},
+  {id:4,name:"Bank Feeds",                  account:"DT", track:"DTM Migration Bank Feeds",status:"Active", pm:"Akash",          designer:"Kevin",designation:"UX Designer"}
+];
+
+// --- ENTRIES ---
+var ENTRIES = [
+  {id:1,projectId:1,month:"March 2026",week:"W1  Mar 2-6",   priority:"Medium",status:"On Track",  links:"",
+   desc:"Post migration unbilled charges clearance in QBO"},
+  {id:2,projectId:1,month:"March 2026",week:"W2  Mar 9-13",  priority:"High",  status:"On Track",  links:"",
+   desc:"Unbilled charges content changes (Fusion DTM)\nError message for wrong Realm ID in QBDT\nPayroll migration task for employees\nTax migration task - address update"},
+  {id:3,projectId:1,month:"March 2026",week:"W3  Mar 16-20", priority:"High",  status:"On Track",  links:"",
+   desc:"Migration error screen content\nManual payments for QuickBooks products"},
+  {id:4,projectId:2,month:"March 2026",week:"W1  Mar 2-6",   priority:"Low",   status:"Done",      links:"NotebookLM",
+   desc:"Verticalizer content"},
+  {id:5,projectId:2,month:"March 2026",week:"W2  Mar 9-13",  priority:"Medium",status:"On Track",  links:"NotebookLM",
+   desc:"Sandbox self-serve content revision based on review feedback"},
+  {id:6,projectId:2,month:"March 2026",week:"W3  Mar 16-20", priority:"Medium",status:"On Track",  links:"NotebookLM",
+   desc:"Sandbox revisions - PD decision on user movement during data seeding\nTemporary screen before data seeding begins"},
+  {id:7,projectId:3,month:"March 2026",week:"W2  Mar 9-13",  priority:"High",  status:"On Track",  links:"Notes for RBAC Workshop\nRBAC rough work and deviation notes",
+   desc:"RBAC Workshop content\nRBAC customer interviews (x2)"},
+  {id:8,projectId:3,month:"March 2026",week:"W3  Mar 16-20", priority:"High",  status:"On Track",  links:"NotebookLM",
+   desc:"RBAC Workshop\nRBAC Playbook content\nRBAC experience for IES"},
+  {id:9,projectId:4,month:"March 2026",week:"W3  Mar 16-20", priority:"Medium",status:"On Track",  links:"",
+   desc:"Data sync for bank feeds"}
+];
+
+// --- WEEKS: predefined columns, independent of entries ---
+var WEEKS = {
+  "March 2026": [
+    "W1  Mar 2-6",
+    "W2  Mar 9-13",
+    "W3  Mar 16-20",
+    "W4  Mar 23-27",
+    "W5  Mar 30-3 Apr"
+  ]
+};
+
+// Suggested week templates per month (for quick-add)
+var WEEK_TEMPLATES = {
+  "January 2026":   ["W1  Jan 5-9","W2  Jan 12-16","W3  Jan 19-23","W4  Jan 26-30"],
+  "February 2026":  ["W1  Feb 2-6","W2  Feb 9-13","W3  Feb 16-20","W4  Feb 23-27"],
+  "March 2026":     ["W1  Mar 2-6","W2  Mar 9-13","W3  Mar 16-20","W4  Mar 23-27","W5  Mar 30-3 Apr"],
+  "April 2026":     ["W1  Apr 6-10","W2  Apr 13-17","W3  Apr 20-24","W4  Apr 27-30"],
+  "May 2026":       ["W1  May 4-8","W2  May 11-15","W3  May 18-22","W4  May 25-29"],
+  "June 2026":      ["W1  Jun 1-5","W2  Jun 8-12","W3  Jun 15-19","W4  Jun 22-26","W5  Jun 29-30"],
+  "July 2026":      ["W1  Jul 6-10","W2  Jul 13-17","W3  Jul 20-24","W4  Jul 27-31"],
+  "August 2026":    ["W1  Aug 3-7","W2  Aug 10-14","W3  Aug 17-21","W4  Aug 24-28"],
+  "September 2026": ["W1  Sep 1-5","W2  Sep 8-12","W3  Sep 15-19","W4  Sep 22-26","W5  Sep 29-30"],
+  "October 2026":   ["W1  Oct 5-9","W2  Oct 12-16","W3  Oct 19-23","W4  Oct 26-30"],
+  "November 2026":  ["W1  Nov 2-6","W2  Nov 9-13","W3  Nov 16-20","W4  Nov 23-27"],
+  "December 2026":  ["W1  Dec 1-5","W2  Dec 8-12","W3  Dec 15-19","W4  Dec 22-26"]
+};
+
+var editEntryId   = null;
+var editEntryCtx  = null;
+var editProjectId = null;
+var addWeekMonth  = null;
+var openDrop      = null;
+var showCompleted = false;
+var curView       = "matrix";
+
+// --- STORAGE ---
+function persist() {
+  try {
+    localStorage.setItem("kjt26p", JSON.stringify(PROJECTS));
+    localStorage.setItem("kjt26e", JSON.stringify(ENTRIES));
+    localStorage.setItem("kjt26w", JSON.stringify(WEEKS));
+    var snaps = getSnaps();
+    snaps.unshift({
+      ts:       new Date().toISOString(),
+      label:    fmtDate(new Date()),
+      pcount:   PROJECTS.length,
+      ecount:   ENTRIES.length,
+      projects: JSON.parse(JSON.stringify(PROJECTS)),
+      entries:  JSON.parse(JSON.stringify(ENTRIES)),
+      weeks:    JSON.parse(JSON.stringify(WEEKS))
+    });
+    if (snaps.length > 10) snaps = snaps.slice(0, 10);
+    localStorage.setItem("kjt26bk", JSON.stringify(snaps));
+    var el = document.getElementById("save-ts");
+    if (el) el.textContent = "saved " + fmtTime(new Date());
+  } catch(e) {}
+}
+
+function loadData() {
+  try { var p = localStorage.getItem("kjt26p"); if (p) PROJECTS = JSON.parse(p); } catch(e) {}
+  try { var e = localStorage.getItem("kjt26e"); if (e) ENTRIES  = JSON.parse(e); } catch(e) {}
+  try { var w = localStorage.getItem("kjt26w"); if (w) WEEKS    = JSON.parse(w); } catch(e) {}
+}
+
+function getSnaps() {
+  try { return JSON.parse(localStorage.getItem("kjt26bk") || "[]"); } catch(e) { return []; }
+}
+
+function fmtTime(d) {
+  var h = d.getHours(), m = d.getMinutes();
+  return (h < 10 ? "0"+h : h) + ":" + (m < 10 ? "0"+m : m);
+}
+function fmtDate(d) {
+  var mo = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()];
+  return mo + " " + d.getDate() + " " + fmtTime(d);
+}
+
+// --- BACKUP UI ---
+function toggleBk(e) {
+  e.stopPropagation();
+  var p = document.getElementById("bk-drop");
+  var opening = !p.classList.contains("open");
+  closeAllDrops();
+  if (opening) { renderBkList(); p.classList.add("open"); }
+}
+function renderBkList() {
+  var snaps = getSnaps(), el = document.getElementById("bk-list");
+  if (!snaps.length) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:#475569;font-size:12px">No snapshots yet</div>';
+    return;
+  }
+  var html = "";
+  for (var i = 0; i < snaps.length; i++) {
+    var s = snaps[i];
+    html += '<div class="bk-row">'
+      + '<div><div class="bk-lbl">' + s.label + '</div>'
+      + '<div class="bk-sub">' + s.pcount + ' projects &middot; ' + s.ecount + ' entries</div></div>'
+      + '<div style="display:flex;gap:5px">'
+      + '<button class="btn bx sm" onclick="dlSnap(' + i + ')">&#x2B07;</button>'
+      + '<button class="btn bp sm" onclick="restoreSnap(' + i + ')">Restore</button>'
+      + '</div></div>';
+  }
+  el.innerHTML = html;
+}
+function restoreSnap(i) {
+  var s = getSnaps()[i];
+  if (!s || !confirm("Restore to " + s.label + "?\nCurrent data will be replaced.")) return;
+  PROJECTS = s.projects; ENTRIES = s.entries;
+  if (s.weeks) WEEKS = s.weeks;
+  persist(); renderCur();
+  document.getElementById("bk-drop").classList.remove("open");
+  toast("Restored to " + s.label);
+}
+function dlSnap(i) {
+  var s = getSnaps()[i]; if (!s) return;
+  var ts = s.ts.slice(0, 16).replace("T","_").replace(/:/g, "-");
+  dlFile("KJ_Backup_" + ts + ".json",
+    JSON.stringify({version:2, exported:s.ts, projects:s.projects, entries:s.entries, weeks:s.weeks}, null, 2));
+}
+function importJSON(ev) {
+  var f = ev.target.files[0]; if (!f) return;
+  var r = new FileReader();
+  r.onload = function(e) {
+    try {
+      var d = JSON.parse(e.target.result);
+      var p = d.projects || [], en = d.entries || d.data || [], wk = d.weeks || {};
+      if (!Array.isArray(p) || !Array.isArray(en)) throw new Error("invalid");
+      if (!confirm("Restore " + p.length + " projects and " + en.length + " entries?")) return;
+      PROJECTS = p; ENTRIES = en; WEEKS = wk;
+      persist(); renderCur();
+      document.getElementById("bk-drop").classList.remove("open");
+      toast("Restored");
+    } catch(err) { alert("Invalid backup file."); }
+  };
+  r.readAsText(f); ev.target.value = "";
+}
+function dlFile(name, content) {
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([content], {type:"application/json"}));
+  a.download = name; a.click(); URL.revokeObjectURL(a.href);
+}
+document.addEventListener("click", closeAllDrops);
+function closeAllDrops() {
+  var bk = document.getElementById("bk-drop"); if (bk) bk.classList.remove("open");
+  if (openDrop) {
+    var el = document.getElementById(openDrop);
+    if (el) el.classList.remove("open");
+    openDrop = null;
+  }
+}
+
+// --- HELPERS ---
+function esc(s) {
+  return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function getEntry(projectId, month, week) {
+  for (var i = 0; i < ENTRIES.length; i++) {
+    if (ENTRIES[i].projectId === projectId && ENTRIES[i].month === month && ENTRIES[i].week === week)
+      return ENTRIES[i];
+  }
+  return null;
+}
+function getProject(id) {
+  for (var i = 0; i < PROJECTS.length; i++) if (PROJECTS[i].id === id) return PROJECTS[i];
+  return null;
+}
+function getWeeksForMonth(month) {
+  if (WEEKS[month] && WEEKS[month].length) return WEEKS[month];
+  // Auto-populate from templates when first visiting a month
+  if (WEEK_TEMPLATES[month] && WEEK_TEMPLATES[month].length) {
+    WEEKS[month] = WEEK_TEMPLATES[month].slice();
+    persist();
+    return WEEKS[month];
+  }
+  return [];
+}
+function firstMonthWithData() {
+  for (var i = 0; i < MONTHS.length; i++)
+    for (var j = 0; j < ENTRIES.length; j++)
+      if (ENTRIES[j].month === MONTHS[i]) return MONTHS[i];
+  return MONTHS[2];
+}
+function nextId(arr) {
+  var max = 0;
+  for (var i = 0; i < arr.length; i++) if (arr[i].id > max) max = arr[i].id;
+  return max + 1;
+}
+function linksHTML(raw) {
+  if (!raw || !raw.trim()) return "";
+  var items = raw.split("\n").map(function(s){ return s.replace(/^[\s\-]+/, "").trim(); }).filter(Boolean);
+  return items.map(function(item) {
+    var isURL = item.indexOf("http://") === 0 || item.indexOf("https://") === 0;
+    if (isURL) {
+      var label = item.replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
+      return '<a class="lchip lchip-url" href="' + esc(item) + '" target="_blank" rel="noopener"'
+        + ' onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">&#x2197; ' + esc(label) + '</a>';
+    }
+    return '<span class="lchip lchip-txt">' + esc(item) + '</span>';
+  }).join("");
+}
+function pillHTML(id, status, ctx) {
+  var c = SC[status] || SC["Not Started"], did = "sd-" + ctx + "-" + id;
+  var opts = "";
+  for (var i = 0; i < STATS.length; i++) {
+    opts += '<button type="button" onclick="setStat(\'' + ctx + '\',' + id + ',\'' + STATS[i] + '\',event)">'
+          + '<span class="dot" style="background:' + SC[STATS[i]].dot + '"></span>' + STATS[i] + '</button>';
+  }
+  return '<div class="sm-wrap">'
+    + '<button class="sp" style="background:' + c.bg + ';color:' + c.fg + '" onclick="toggleDrop(\'' + did + '\',event)">'
+    + '<span class="dot" style="background:' + c.dot + '"></span>' + status
+    + '<span style="font-size:9px;margin-left:2px;opacity:.5">&#9660;</span></button>'
+    + '<div class="sm-drop" id="' + did + '">' + opts + '</div></div>';
+}
+function toggleDrop(id, e) {
+  e.stopPropagation();
+  if (openDrop && openDrop !== id) {
+    var prev = document.getElementById(openDrop); if (prev) prev.classList.remove("open");
+  }
+  var el = document.getElementById(id);
+  if (el) { el.classList.toggle("open"); openDrop = el.classList.contains("open") ? id : null; }
+}
+function setStat(ctx, id, status, e) {
+  e.stopPropagation();
+  ENTRIES = ENTRIES.map(function(en){ return en.id === id ? Object.assign({}, en, {status:status}) : en; });
+  persist(); renderCur(); toast("Status: " + status);
+}
+function prioHTML(p) {
+  return '<span class="prio"><span class="dot" style="background:' + (PC[p]||"#94a3b8") + '"></span>' + p + '</span>';
+}
+
+// --- WEEKS MANAGEMENT ---
+function openWeekModal(month) {
+  addWeekMonth = month;
+  document.getElementById("wk-month").value = month;
+  document.getElementById("wk-label").value = "";
+  // build quick-add suggestions
+  var existing = WEEKS[month] || [];
+  var templates = WEEK_TEMPLATES[month] || [];
+  var suggestions = templates.filter(function(t) { return existing.indexOf(t) < 0; });
+  var sugHTML = suggestions.length
+    ? suggestions.map(function(s) {
+        return '<button type="button" class="btn be sm" style="font-size:11px;font-family:monospace"'
+          + ' onclick="quickAddWeek(\'' + esc(s) + '\')">' + esc(s) + '</button>';
+      }).join("")
+    : '<span style="font-size:11px;color:#94a3b8">All standard weeks already added</span>';
+  document.getElementById("week-suggestions").innerHTML = sugHTML;
+  document.getElementById("week-ov").classList.add("open");
+  setTimeout(function(){ document.getElementById("wk-label").focus(); }, 100);
+}
+function quickAddWeek(label) {
+  document.getElementById("wk-label").value = label;
+}
+function closeWeekModal() {
+  document.getElementById("week-ov").classList.remove("open");
+  addWeekMonth = null;
+}
+function saveWeek(ev) {
+  ev.preventDefault();
+  var label = document.getElementById("wk-label").value.trim();
+  var month = addWeekMonth;
+  if (!label || !month) return;
+  if (!WEEKS[month]) WEEKS[month] = [];
+  if (WEEKS[month].indexOf(label) >= 0) { toast("That week already exists"); return; }
+  WEEKS[month].push(label);
+  persist(); closeWeekModal(); renderMatrix();
+  toast("Week added");
+}
+function removeWeekByIdx(month, idx) {
+  if (!WEEKS[month] || idx < 0 || idx >= WEEKS[month].length) return;
+  var label = WEEKS[month][idx];
+  var hasEntries = ENTRIES.some(function(e){ return e.month === month && e.week === label; });
+  var msg = "Remove week \"" + label + "\" from " + month + "?";
+  if (hasEntries) msg += "\n\nThis will also delete " + ENTRIES.filter(function(e){ return e.month===month&&e.week===label; }).length + " entries for this week.";
+  if (!confirm(msg)) return;
+  WEEKS[month].splice(idx, 1);
+  if (hasEntries) ENTRIES = ENTRIES.filter(function(e){ return !(e.month===month && e.week===label); });
+  persist(); renderMatrix();
+  toast("Week removed");
+}
+
+// --- MATRIX RENDER ---
+function renderMatrix() {
+  var month  = document.getElementById("board-month").value;
+  var fAcct  = document.getElementById("f-acct").value;
+  var fStat  = document.getElementById("f-stat").value;
+  var weeks  = getWeeksForMonth(month);
+
+  var projects = PROJECTS.filter(function(p){
+    if (!showCompleted && p.status === "Complete") return false;
+    if (fAcct && p.account !== fAcct) return false;
+    return true;
+  });
+
+  var summary = projects.length + " project" + (projects.length !== 1 ? "s" : "")
+    + " &middot; " + weeks.length + " week" + (weeks.length !== 1 ? "s" : "");
+  document.getElementById("matrix-summary").innerHTML = summary;
+
+  var html = "<thead><tr>";
+  // Project column header
+  html += '<th class="proj-cell" style="min-width:230px;width:230px">'
+    + '<div class="th-inner"><span class="th-proj-label">Project</span></div></th>';
+  // Week columns
+  for (var wi = 0; wi < weeks.length; wi++) {
+    var w = weeks[wi];
+    var parts = w.split("  "); // double space separator
+    var label = parts[0] || w;
+    var dates = parts[1] || "";
+    html += '<th style="min-width:190px">'
+      + '<div class="th-inner" style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px">'
+      + '<div><div class="th-week">' + esc(label) + '</div><div class="th-dates">' + esc(dates) + '</div></div>'
+      + '<button style="background:none;border:none;color:#475569;cursor:pointer;font-size:11px;padding:2px 4px;border-radius:4px;flex-shrink:0;line-height:1"'
+      + ' title="Remove week" onclick="removeWeekByIdx(\'' + esc(month) + '\',' + wi + ')">&#x2715;</button>'
+      + '</div></th>';
+  }
+  // Add week column
+  html += '<th style="width:52px;min-width:52px"><div class="th-inner">'
+    + '<button class="btn bp sm" onclick="openWeekModal(\'' + esc(month) + '\')" title="Add a new week column">+ Week</button>'
+    + '</div></th>';
+  html += "</tr></thead><tbody>";
+
+  if (weeks.length === 0) {
+    html += '<tr><td colspan="2" style="padding:40px;text-align:center;color:#94a3b8;font-size:13px">'
+      + 'No weeks defined for ' + esc(month) + '. Click <strong>+ Week</strong> above to add the first week.'
+      + '</td></tr>';
+  } else {
+    for (var pi = 0; pi < projects.length; pi++) {
+      var proj = projects[pi];
+      html += "<tr>";
+      // Project cell
+      var isComplete = proj.status === "Complete";
+      html += '<td class="proj-cell' + (isComplete ? ' complete' : '') + '">'
+        + (isComplete ? '<div class="complete-badge">&#x2713; Complete</div>' : '')
+        + '<div class="proj-acct">' + esc(proj.account) + '</div>'
+        + '<div class="proj-name">' + esc(proj.name) + '</div>'
+        + '<div class="proj-track">' + esc(proj.track) + '</div>'
+        + '<div class="proj-person"><span class="person-lbl">PM</span><span class="person-name">' + esc(proj.pm) + '</span></div>'
+        + '<div class="proj-person"><span class="person-lbl">&#x2713;</span>'
+        + '<span class="dsn-chip"><span style="font-weight:700">' + esc(proj.designer) + '</span>'
+        + '&nbsp;<span style="opacity:.75;font-weight:400">' + esc(proj.designation||"Designer") + '</span></span></div>'
+        + '<div class="proj-actions">'
+        + '<button class="btn be sm" onclick="openProjectModal(' + proj.id + ')">Edit</button>'
+        + (isComplete
+            ? '<button class="btn be sm" onclick="toggleProjectStatus(' + proj.id + ')">Reactivate</button>'
+            : '<button class="btn be sm" style=\"color:#059669\"' + ' onclick="toggleProjectStatus(' + proj.id + ')">Mark complete</button>')
+        + '<button class="btn bd sm" onclick="confirmDelProject(' + proj.id + ')">Delete</button>'
+        + '</div></td>';
+      // Entry cells
+      for (var wi2 = 0; wi2 < weeks.length; wi2++) {
+        var week = weeks[wi2];
+        var entry = getEntry(proj.id, month, week);
+        // Apply status filter
+        if (fStat && entry && entry.status !== fStat) entry = null;
+        html += '<td class="entry-cell">';
+        if (entry) {
+          html += '<div class="ecell" onclick="openPan(' + entry.id + ',event)"'
+            + ' style="border-left:3px solid ' + (SC[entry.status]||SC["Not Started"]).dot + '">'
+            + '<div class="ecell-top">'
+            + pillHTML(entry.id, entry.status, "m")
+            + prioHTML(entry.priority)
+            + '<button class="btn be sm" style="margin-left:auto;flex-shrink:0"'
+            + ' onclick="event.stopPropagation();openEntryModalEdit(' + entry.id + ')">Edit</button>'
+            + '</div>'
+            + '<div class="ecell-desc">' + esc(entry.desc||"") + '</div>';
+          if (entry.links) html += '<div class="ecell-links">' + linksHTML(entry.links) + '</div>';
+          html += '</div>';
+        } else {
+          html += '<div class="empty-cell"'
+            + ' onclick="openEntryModalNew(' + proj.id + ',\'' + esc(month) + '\',\'' + esc(week) + '\')">+</div>';
+        }
+        html += '</td>';
+      }
+      // Empty add-week column cell
+      html += '<td style="background:#f8fafc;border-right:none"></td>';
+      html += "</tr>";
+    }
+  }
+
+  // Add project row
+  html += '<tr class="add-proj-row"><td colspan="' + (weeks.length + 2) + '">'
+    + '<button class="btn bp" onclick="openProjectModal(null)">+ Add new project</button>'
+    + '</td></tr>';
+
+  html += "</tbody>";
+  document.getElementById("matrix-table").innerHTML = html;
+}
+
+// --- SIDE PANEL ---
+function openPan(entryId, e) {
+  if (e) e.stopPropagation();
+  var en = null;
+  for (var i = 0; i < ENTRIES.length; i++) if (ENTRIES[i].id === entryId) { en = ENTRIES[i]; break; }
+  if (!en) return;
+  var proj = getProject(en.projectId);
+  var html = '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">'
+    + '<div>'
+    + (proj ? '<div style="font-size:10px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px">'
+      + esc(proj.account) + ' &middot; ' + esc(proj.track) + '</div>' : "")
+    + '<div style="font-size:16px;font-weight:700;color:#0f172a;line-height:1.3">' + esc(proj ? proj.name : "Entry") + '</div>'
+    + '<div style="font-size:11px;color:#94a3b8;margin-top:4px">' + esc(en.month) + ' &middot; ' + esc(en.week) + '</div>'
+    + '</div>'
+    + '<button class="btn be sm" onclick="closePan()">&#x2715;</button></div>'
+    + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+    + pillHTML(en.id, en.status, "p") + prioHTML(en.priority) + '</div>'
+    + '<div><div class="pan-lbl">Description &amp; updates</div>'
+    + '<div class="pan-val">' + esc(en.desc||"--") + '</div></div>';
+  if (proj) {
+    html += '<div class="pan-g2">'
+      + '<div><div class="pan-lbl">PM</div><div class="pan-val">' + esc(proj.pm||"--") + '</div></div>'
+      + '<div><div class="pan-lbl">Designer</div><div style="margin-top:4px">'
+      + '<span class="dsn-chip"><span style="font-weight:700">' + esc(proj.designer) + '</span>'
+      + ' <span style="opacity:.75;font-weight:400">' + esc(proj.designation||"") + '</span></span></div></div>'
+      + '</div>';
+  }
+  if (en.links) {
+    html += '<div><div class="pan-lbl">Links &amp; notes</div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">' + linksHTML(en.links) + '</div></div>';
+  }
+  html += '<div style="display:flex;gap:8px;margin-top:4px">'
+    + '<button class="btn bp" onclick="closePan();openEntryModalEdit(' + en.id + ')">Edit</button>'
+    + '<button class="btn bd" onclick="closePan();deleteEntry(' + en.id + ')">Delete</button>'
+    + '</div>';
+  document.getElementById("pan-body").innerHTML = html;
+  document.getElementById("pov").classList.add("open");
+}
+function closePan() { document.getElementById("pov").classList.remove("open"); }
+
+// --- ENTRY MODAL ---
+function openEntryModalNew(projectId, month, week) {
+  editEntryId  = null;
+  editEntryCtx = {projectId:projectId, month:month, week:week};
+  var proj = getProject(projectId);
+  document.getElementById("entry-modal-title").textContent = "Add work";
+  document.getElementById("entry-modal-ctx").innerHTML = proj
+    ? '<strong>' + esc(proj.name) + '</strong> &nbsp;&middot;&nbsp; ' + esc(month) + ' &nbsp;&middot;&nbsp; ' + esc(week)
+    : esc(month) + ' ' + esc(week);
+  document.getElementById("e-priority").value = "Medium";
+  document.getElementById("e-status").value   = "On Track";
+  document.getElementById("e-desc").value     = "";
+  document.getElementById("e-links").value    = "";
+  document.getElementById("entry-ov").classList.add("open");
+}
+function openEntryModalEdit(entryId) {
+  var en = null;
+  for (var i = 0; i < ENTRIES.length; i++) if (ENTRIES[i].id === entryId) { en = ENTRIES[i]; break; }
+  if (!en) return;
+  editEntryId  = entryId;
+  editEntryCtx = {projectId:en.projectId, month:en.month, week:en.week};
+  var proj = getProject(en.projectId);
+  document.getElementById("entry-modal-title").textContent = "Edit work";
+  document.getElementById("entry-modal-ctx").innerHTML = proj
+    ? '<strong>' + esc(proj.name) + '</strong> &nbsp;&middot;&nbsp; ' + esc(en.month) + ' &nbsp;&middot;&nbsp; ' + esc(en.week)
+    : esc(en.month) + ' ' + esc(en.week);
+  document.getElementById("e-priority").value = en.priority;
+  document.getElementById("e-status").value   = en.status;
+  document.getElementById("e-desc").value     = en.desc || "";
+  document.getElementById("e-links").value    = en.links || "";
+  document.getElementById("entry-ov").classList.add("open");
+}
+function closeEntryModal() {
+  document.getElementById("entry-ov").classList.remove("open");
+  editEntryId = null; editEntryCtx = null;
+}
+function saveEntry(ev) {
+  ev.preventDefault();
+  var ctx = editEntryCtx; if (!ctx) return;
+  var entry = {
+    id:        editEntryId || nextId(ENTRIES),
+    projectId: ctx.projectId,
+    month:     ctx.month,
+    week:      ctx.week,
+    priority:  document.getElementById("e-priority").value,
+    status:    document.getElementById("e-status").value,
+    desc:      document.getElementById("e-desc").value,
+    links:     document.getElementById("e-links").value
+  };
+  if (editEntryId) {
+    ENTRIES = ENTRIES.map(function(e){ return e.id === editEntryId ? entry : e; });
+  } else {
+    ENTRIES.push(entry);
+  }
+  persist(); closeEntryModal(); renderCur();
+  toast(editEntryId ? "Updated" : "Added");
+}
+function deleteEntry(id) {
+  if (!confirm("Delete this entry?")) return;
+  ENTRIES = ENTRIES.filter(function(e){ return e.id !== id; });
+  persist(); renderCur(); toast("Deleted");
+}
+
+// --- PROJECT STATUS TOGGLE ---
+function toggleProjectStatus(id) {
+  PROJECTS = PROJECTS.map(function(p) {
+    if (p.id !== id) return p;
+    var newStatus = (p.status === "Complete") ? "Active" : "Complete";
+    return Object.assign({}, p, {status: newStatus});
+  });
+  persist();
+  renderCur();
+  var proj = getProject(id);
+  toast(proj ? (proj.status === "Complete" ? "Marked complete" : "Reactivated") : "Updated");
+}
+
+// --- COMPLETED TOGGLE ---
+function toggleCompleted() {
+  showCompleted = !showCompleted;
+  var btn = document.getElementById("completed-toggle");
+  if (btn) {
+    btn.textContent = showCompleted ? "Hide completed" : "Show completed";
+    btn.style.background = showCompleted ? "#6366f1" : "";
+    btn.style.color = showCompleted ? "#fff" : "";
+    btn.style.borderColor = showCompleted ? "#6366f1" : "";
+  }
+  renderMatrix();
+}
+
+// --- PROJECT MODAL ---
+function openProjectModal(id) {
+  editProjectId = id;
+  var p = id ? getProject(id) : null;
+  document.getElementById("proj-modal-title").textContent = id ? "Edit project" : "New project";
+  document.getElementById("p-name").value        = p ? p.name        : "";
+  document.getElementById("p-account").value     = p ? p.account     : "DT";
+  document.getElementById("p-track").value       = p ? p.track       : "";
+  document.getElementById("p-pm").value          = p ? p.pm          : "";
+  document.getElementById("p-designer").value    = p ? p.designer    : "Kevin";
+  document.getElementById("p-designation").value = p ? p.designation : "UX Designer";
+  document.getElementById("p-status").value = p ? (p.status||"Active") : "Active";
+  document.getElementById("p-del-btn").style.display = id ? "inline-flex" : "none";
+  document.getElementById("proj-ov").classList.add("open");
+}
+function closeProjModal() {
+  document.getElementById("proj-ov").classList.remove("open"); editProjectId = null;
+}
+function saveProject(ev) {
+  ev.preventDefault();
+  var proj = {
+    id:          editProjectId || nextId(PROJECTS),
+    name:        document.getElementById("p-name").value,
+    account:     document.getElementById("p-account").value,
+    track:       document.getElementById("p-track").value,
+    pm:          document.getElementById("p-pm").value,
+    designer:    document.getElementById("p-designer").value,
+    designation: document.getElementById("p-designation").value,
+    status:      document.getElementById("p-status").value
+  };
+  if (editProjectId) {
+    PROJECTS = PROJECTS.map(function(p){ return p.id === editProjectId ? proj : p; });
+  } else {
+    PROJECTS.push(proj);
+  }
+  persist(); closeProjModal(); renderCur(); populateFilters();
+  toast(editProjectId ? "Project updated" : "Project added");
+}
+function confirmDelProject(id) {
+  var proj = getProject(id); if (!proj) return;
+  var n = ENTRIES.filter(function(e){ return e.projectId === id; }).length;
+  var msg = "Delete project \"" + proj.name + "\"?";
+  if (n) msg += "\n\nThis will also delete " + n + " entr" + (n===1?"y":"ies") + ".";
+  if (!confirm(msg)) return;
+  PROJECTS = PROJECTS.filter(function(p){ return p.id !== id; });
+  ENTRIES  = ENTRIES.filter(function(e){ return e.projectId !== id; });
+  persist(); renderCur(); toast("Project deleted");
+}
+function deleteProjFromModal() { confirmDelProject(editProjectId); closeProjModal(); }
+
+// --- DASHBOARD ---
+function renderDash() {
+  var total = ENTRIES.length, pcount = PROJECTS.length;
+  var ontrack = 0, blocked = 0, aset = {};
+  for (var i = 0; i < ENTRIES.length; i++) {
+    var e = ENTRIES[i];
+    if (e.status === "On Track" || e.status === "Done") ontrack++;
+    if (e.status === "Blocked"  || e.status === "At Risk") blocked++;
+  }
+  for (var i = 0; i < PROJECTS.length; i++) aset[PROJECTS[i].account] = 1;
+  var accs = Object.keys(aset).length;
+
+  document.getElementById("kgrid").innerHTML = [
+    {l:"Projects",          v:pcount,  s:"active"},
+    {l:"Total entries",     v:total,   s:"across all months"},
+    {l:"Accounts",          v:accs,    s:"active"},
+    {l:"On track / Done",   v:ontrack, s:(total?Math.round(ontrack/total*100):0)+"% of entries"},
+    {l:"At risk / Blocked", v:blocked, s:blocked?"needs attention":"all clear", red:blocked>0}
+  ].map(function(k){
+    return '<div class="kc"><div class="kl">'+k.l+'</div>'
+      +'<div class="kv"'+(k.red?' style="color:#dc2626"':'')+'>'+k.v+'</div>'
+      +'<div class="ks">'+k.s+'</div></div>';
+  }).join("");
+
+  var bars = "";
+  for (var i = 0; i < STATS.length; i++) {
+    var s = STATS[i], n = 0;
+    for (var j = 0; j < ENTRIES.length; j++) if (ENTRIES[j].status === s) n++;
+    if (!n) continue;
+    var c = SC[s];
+    bars += '<div class="br"><span class="sp" style="background:'+c.bg+';color:'+c.fg+';cursor:default;min-width:108px">'
+      + '<span class="dot" style="background:'+c.dot+'"></span>'+s+'</span>'
+      + '<div class="bb"><div class="bf" style="background:'+c.dot+';width:'+Math.round(n/total*100)+'%"></div></div>'
+      + '<span style="font-size:12px;color:#94a3b8;min-width:16px;text-align:right">'+n+'</span></div>';
+  }
+  document.getElementById("sbars").innerHTML = bars;
+
+  // Heatmap
+  var wset = {};
+  for (var i = 0; i < ENTRIES.length; i++) wset[ENTRIES[i].week] = 1;
+  var wlist = Object.keys(wset).sort();
+  var hmap = '<table class="ht"><thead><tr>'
+    + '<th style="text-align:left;min-width:160px;background:transparent;border:none;font-size:10px;'
+    + 'font-weight:500;color:#94a3b8;text-transform:none;letter-spacing:0;padding-right:8px">Project</th>';
+  for (var i = 0; i < wlist.length; i++) {
+    hmap += '<th style="background:transparent;border:none;font-size:10px;font-weight:500;color:#94a3b8;'
+      + 'text-align:center;text-transform:none;letter-spacing:0;padding:0 2px 4px">' + esc(wlist[i].split(" ")[0]) + '</th>';
+  }
+  hmap += '</tr></thead><tbody>';
+  for (var pi = 0; pi < PROJECTS.length; pi++) {
+    var proj = PROJECTS[pi], amap = {};
+    for (var i = 0; i < ENTRIES.length; i++) if (ENTRIES[i].projectId === proj.id) amap[ENTRIES[i].week] = 1;
+    hmap += '<tr><td style="font-size:11px;color:#475569;padding-right:8px;max-width:160px;overflow:hidden;'
+      + 'text-overflow:ellipsis;white-space:nowrap;border:none;padding-bottom:2px" title="'+esc(proj.name)+'">'
+      + esc(proj.name) + '</td>';
+    for (var i = 0; i < wlist.length; i++) {
+      var on = amap[wlist[i]] ? 1 : 0;
+      hmap += '<td style="border:none;padding:1px 2px"><div class="hc" style="background:'
+        + (on?"#6366f1":"#f1f5f9") + ';color:' + (on?"#fff":"transparent") + '">'
+        + (on?"&#x25CF;":"") + '</div></td>';
+    }
+    hmap += '</tr>';
+  }
+  document.getElementById("heatmap").innerHTML = hmap + '</tbody></table>';
+
+  var ptbl = '<thead><tr>' + ["Project","Account","Track","PM","Designer","Entries",""].map(function(h){return'<th>'+h+'</th>';}).join("") + '</tr></thead><tbody>';
+  for (var i = 0; i < PROJECTS.length; i++) {
+    var proj = PROJECTS[i], n = 0;
+    for (var j = 0; j < ENTRIES.length; j++) if (ENTRIES[j].projectId === proj.id) n++;
+    ptbl += '<tr style="background:' + (i%2?"#fafbff":"#fff") + '">'
+      + '<td style="font-weight:600">' + esc(proj.name) + '</td>'
+      + '<td style="color:#6366f1;font-weight:700">' + esc(proj.account) + '</td>'
+      + '<td>' + esc(proj.track) + '</td><td>' + esc(proj.pm) + '</td>'
+      + '<td><span class="dsn-chip"><span style="font-weight:700">' + esc(proj.designer) + '</span>'
+      + '&nbsp;<span style="opacity:.75;font-weight:400">' + esc(proj.designation||"") + '</span></span></td>'
+      + '<td style="text-align:center">' + n + '</td>'
+      + '<td><button class="btn be sm" onclick="openProjectModal(' + proj.id + ')">Edit</button></td></tr>';
+  }
+  document.getElementById("proj-table").innerHTML = ptbl + '</tbody>';
+}
+
+// --- ALL ENTRIES ---
+function renderAll() {
+  var q  = (document.getElementById("srch").value||"").toLowerCase();
+  var fm = document.getElementById("fa-month").value;
+  var fa = document.getElementById("fa-acct").value;
+  var fs = document.getElementById("fa-stat").value;
+
+  var rows = [];
+  for (var i = 0; i < ENTRIES.length; i++) {
+    var e = ENTRIES[i], proj = getProject(e.projectId) || {};
+    if (fm && e.month       !== fm) continue;
+    if (fa && proj.account  !== fa) continue;
+    if (fs && e.status      !== fs) continue;
+    if (q) {
+      var hay = [(proj.name||""), e.desc, proj.pm, proj.designer, e.links, e.week].join(" ").toLowerCase();
+      if (hay.indexOf(q) < 0) continue;
+    }
+    rows.push({e:e, proj:proj});
+  }
+
+  var grouped = {};
+  for (var i = 0; i < MONTHS.length; i++) {
+    var m = MONTHS[i];
+    var mr = rows.filter(function(r){ return r.e.month === m; });
+    if (!mr.length) continue;
+    var bw = {};
+    for (var j = 0; j < mr.length; j++) {
+      var w = mr[j].e.week;
+      if (!bw[w]) bw[w] = [];
+      bw[w].push(mr[j]);
+    }
+    grouped[m] = bw;
+  }
+
+  var cols = ["Project","Acct","Track","Week","PM","Designer","Description","Priority","Status","Links",""];
+  var html = '<thead><tr>' + cols.map(function(h){return'<th>'+h+'</th>';}).join("") + '</tr></thead><tbody>';
+  var mkeys = Object.keys(grouped);
+
+  if (!mkeys.length) {
+    html += '<tr><td colspan="11" style="text-align:center;padding:40px;color:#94a3b8;font-size:13px">No entries match your filters</td></tr>';
+  } else {
+    for (var mi = 0; mi < mkeys.length; mi++) {
+      var month = mkeys[mi];
+      html += '<tr><td colspan="11" style="background:#0f172a;color:#64748b;font-size:10px;font-weight:700;'
+        + 'letter-spacing:.1em;text-transform:uppercase;padding:8px 14px">&#9658;  ' + month.toUpperCase() + '</td></tr>';
+      var wkeys = Object.keys(grouped[month]);
+      for (var wi = 0; wi < wkeys.length; wi++) {
+        var week = wkeys[wi];
+        html += '<tr><td colspan="11" style="background:#1e293b;color:#475569;font-size:10px;padding:6px 14px;font-style:italic">'
+          + '&nbsp;&nbsp;&nbsp;' + esc(week) + '</td></tr>';
+        var wr = grouped[month][week];
+        for (var ri = 0; ri < wr.length; ri++) {
+          var row = wr[ri], e = row.e, p = row.proj;
+          html += '<tr class="dr" style="background:' + (ri%2?"#fafbff":"#fff") + '">'
+            + '<td style="font-weight:600;min-width:140px">' + esc(p.name||"") + '</td>'
+            + '<td style="color:#6366f1;font-weight:700;white-space:nowrap">' + esc(p.account||"") + '</td>'
+            + '<td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(p.track||"") + '</td>'
+            + '<td style="white-space:nowrap;font-size:11px;color:#64748b">' + esc(e.week) + '</td>'
+            + '<td style="white-space:nowrap">' + esc(p.pm||"") + '</td>'
+            + '<td><span class="dsn-chip"><span style="font-weight:700">' + esc(p.designer||"") + '</span>'
+            + '&nbsp;<span style="opacity:.75;font-weight:400">' + esc(p.designation||"") + '</span></span></td>'
+            + '<td style="max-width:280px;white-space:pre-wrap;font-size:12px;line-height:1.65">' + esc(e.desc||"") + '</td>'
+            + '<td>' + prioHTML(e.priority) + '</td>'
+            + '<td>' + pillHTML(e.id, e.status, "a") + '</td>'
+            + '<td style="max-width:120px"><div style="display:flex;flex-wrap:wrap;gap:3px">' + linksHTML(e.links||"") + '</div></td>'
+            + '<td><div style="display:flex;gap:4px">'
+            + '<button class="btn be sm" onclick="openEntryModalEdit(' + e.id + ')">Edit</button>'
+            + '<button class="btn bd sm" onclick="deleteEntry(' + e.id + ')">&#x2715;</button>'
+            + '</div></td></tr>';
+        }
+      }
+    }
+  }
+  document.getElementById("all-table").innerHTML = html + "</tbody>";
+}
+
+// --- EXCEL EXPORT ---
+function exportXLSX() {
+  var wb = XLSX.utils.book_new();
+  // Projects sheet
+  var prows = [["ID","Name","Account","Track","PM","Designer","Designation"]];
+  for (var i = 0; i < PROJECTS.length; i++) {
+    var p = PROJECTS[i];
+    prows.push([p.id, p.name, p.account, p.track, p.pm, p.designer, p.designation]);
+  }
+  var ws1 = XLSX.utils.aoa_to_sheet(prows);
+  ws1["!cols"] = [6,30,10,24,18,12,16].map(function(w){return{wch:w};});
+  XLSX.utils.book_append_sheet(wb, ws1, "Projects");
+  // Entries sheet
+  var erows = [["ID","Project","Account","Track","Month","Week","PM","Designer","Description","Priority","Status","Links"]];
+  for (var i = 0; i < ENTRIES.length; i++) {
+    var e = ENTRIES[i], p = getProject(e.projectId) || {};
+    erows.push([e.id, p.name||"", p.account||"", p.track||"", e.month, e.week, p.pm||"", p.designer||"", e.desc, e.priority, e.status, e.links]);
+  }
+  var ws2 = XLSX.utils.aoa_to_sheet(erows);
+  ws2["!cols"] = [6,30,10,24,14,16,16,12,44,10,14,28].map(function(w){return{wch:w};});
+  XLSX.utils.book_append_sheet(wb, ws2, "Entries");
+  // Summary
+  var sum = [["Metric","Value"],["Projects",PROJECTS.length],["Total Entries",ENTRIES.length],["",""],["Status","Count"]];
+  for (var i = 0; i < STATS.length; i++) {
+    var n = 0;
+    for (var j = 0; j < ENTRIES.length; j++) if (ENTRIES[j].status === STATS[i]) n++;
+    sum.push([STATS[i], n]);
+  }
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sum), "Summary");
+  XLSX.writeFile(wb, "Kevin_Work_Tracker_" + new Date().toISOString().slice(0,10) + ".xlsx");
+  toast("Excel exported");
+}
+
+// --- VIEW SWITCHING ---
+function showView(v) {
+  curView = v;
+  var views = ["matrix","dashboard","all"];
+  for (var i = 0; i < views.length; i++) {
+    document.getElementById("view-" + views[i]).classList[views[i] === v ? "add" : "remove"]("on");
+  }
+  var labels = {matrix:"Projects", dashboard:"Dashboard", all:"All Entries"};
+  var nbs = document.querySelectorAll(".nb");
+  for (var i = 0; i < nbs.length; i++) {
+    nbs[i].classList[nbs[i].textContent.trim() === labels[v] ? "add" : "remove"]("on");
+  }
+  renderCur();
+}
+function renderCur() {
+  document.getElementById("entry-count").textContent = PROJECTS.length + " projects / " + ENTRIES.length + " entries";
+  if (curView === "matrix")    renderMatrix();
+  if (curView === "dashboard") renderDash();
+  if (curView === "all")       renderAll();
+}
+function toast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  setTimeout(function(){ t.classList.remove("show"); }, 2000);
+}
+
+// --- FILTERS ---
+function populateFilters() {
+  var accts = [], seen = {};
+  for (var i = 0; i < PROJECTS.length; i++) {
+    var a = PROJECTS[i].account;
+    if (!seen[a]) { seen[a] = 1; accts.push(a); }
+  }
+  ["f-acct","fa-acct"].forEach(function(id) {
+    var el = document.getElementById(id), cur = el.value;
+    el.innerHTML = '<option value="">All accounts</option>';
+    for (var i = 0; i < accts.length; i++) {
+      var o = document.createElement("option"); o.value = accts[i]; o.textContent = accts[i]; el.appendChild(o);
+    }
+    if (cur) el.value = cur;
+  });
+  ["f-stat","fa-stat"].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el.options && el.options.length > 1) return;
+    el.innerHTML = '<option value="">All statuses</option>';
+    for (var i = 0; i < STATS.length; i++) {
+      var o = document.createElement("option"); o.value = STATS[i]; o.textContent = STATS[i]; el.appendChild(o);
+    }
+  });
+  var fam = document.getElementById("fa-month");
+  if (!fam.options || fam.options.length <= 1) {
+    fam.innerHTML = '<option value="">All months</option>';
+    for (var i = 0; i < MONTHS.length; i++) {
+      var o = document.createElement("option"); o.value = MONTHS[i]; o.textContent = MONTHS[i]; fam.appendChild(o);
+    }
+  }
+}
+
+// --- INIT ---
+function init() {
+  loadData();
+  var def = firstMonthWithData();
+  var bm = document.getElementById("board-month");
+  for (var i = 0; i < MONTHS.length; i++) {
+    var o = document.createElement("option");
+    o.value = MONTHS[i]; o.textContent = MONTHS[i];
+    if (MONTHS[i] === def) o.selected = true;
+    bm.appendChild(o);
+  }
+  // f-month for modals
+  var fm = document.getElementById("f-month");
+  if (fm) {
+    for (var i = 0; i < MONTHS.length; i++) {
+      var o = document.createElement("option"); o.value = MONTHS[i]; o.textContent = MONTHS[i]; fm.appendChild(o);
+    }
+  }
+  populateFilters();
+  renderMatrix();
+}
+
+init();
+</script>
+</body>
+</html>
